@@ -1,13 +1,18 @@
-#1
-users = {
-    "Oleg": "18-25",
-    "Anna": "26-35",
-    "Ivan": "36-50"
-}
+class Counter:
+    def __init__(self, max_number):
+        self.i = 0
+        self.max_number = max_number
 
-name = input("Enter name: ")
+    def __iter__(self):
+        self.i = 0
+        return self
 
-if name in users:
-    print(users[name])
-else:
-    print("User not found")
+    def __next__(self):
+        self.i += 1
+        if self.i > self.max_number:
+            raise StopIteration
+        return self.i
+counter = Counter(8)
+
+for x in counter:
+    print(x)
