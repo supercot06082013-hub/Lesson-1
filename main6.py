@@ -34,3 +34,4 @@ it = WordLengthIterator(words)
 
 for length in it:
     print(length)
+#:)
