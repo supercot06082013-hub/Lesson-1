@@ -1,37 +1,54 @@
-#1
-def login(username, password):
-    try:
-        assert username == "admin" and password == "1234"
-        print("Вхід виконано успішно")
-    except AssertionError:
-        print("Невірне ім'я користувача або пароль")
+import sqlite3
+import requests
+from bs4 import BeautifulSoup
+conn = sqlite3.connect("AnimalKingdom.db")
+cursor = conn.cursor()
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS Animals (
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    Назва_звіра TEXT,
+    Тип_звіра TEXT
+)
+""")
 
-username = input()
-password = input()
+cursor.executemany(
+    "INSERT INTO Animals (Назва_звіра, Тип_звіра) VALUES (?, ?)",
+    [
+        ("Лев", "Ссавець"),
+        ("Крокодил", "Плазун"),
+        ("Орел", "Птах"),
+        ("Морська черепаха", "Плазун"),
+        ("Мавпа", "Ссавець")
+    ]
+)
 
-login(username, password)
-#2
-class WordLengthIterator:
-    def __init__(self, words):
-        self.words = words
-        self.index = 0
+cursor.execute(
+    "UPDATE Animals SET Назва_звіра = 'Сокіл' WHERE Назва_звіра = 'Орел'"
+)
 
-    def __iter__(self):
-        return self
+cursor.execute("SELECT * FROM Animals WHERE Тип_звіра = 'Ссавець'")
+print(cursor.fetchall())
 
-    def __next__(self):
-        if self.index >= len(self.words):
-            raise StopIteration
-        word = self.words[self.index]
-        self.index += 1
-        return len(word)
+cursor.execute("SELECT * FROM Animals")
+print(cursor.fetchall())
 
+conn.commit()
+conn.close()
+base = "http://books.toscrape.com/"
+url = base + "catalogue/page-1.html"
 
-words = ["python", "iterator", "list", "code"]
+while True:
+    r = requests.get(url)
+    s = BeautifulSoup(r.text, "html.parser")
 
-it = WordLengthIterator(words)
+    for b in s.select("article.product_pod"):
+        title = b.h3.a["title"]
+        price = b.select_one(".price_color").text
+        stock = b.select_one(".availability").text.strip()
+        print(title, "|", price, "|", stock)
 
-for length in it:
-    print(length)
-#:)
+    n = s.select_one("li.next a")
+    if not n:
+        break
+    url = base + "catalogue/" + n["href"]
