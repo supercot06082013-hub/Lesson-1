@@ -1,19 +1,21 @@
-import requests
-from bs4 import BeautifulSoup
-base = "http://books.toscrape.com/"
-url = base + "catalogue/page-1.html"
+import cv2
+from ultralytics import YOLO
+model = YOLO("yolov8n.pt")
+image = cv2.imread("input.jpg")
+overlay = cv2.imread("mask.jpg")
+results = model(image)
+count = 0
+for result in results:
+    boxes = result.boxes.xyxy.cpu().numpy()
 
-while True:
-    r = requests.get(url)
-    s = BeautifulSoup(r.text, "html.parser")
-
-    for b in s.select("article.product_pod"):
-        title = b.h3.a["title"]
-        price = b.select_one(".price_color").text
-        stock = b.select_one(".availability").text.strip()
-        print(title, "|", price, "|", stock)
-
-    n = s.select_one("li.next a")
-    if not n:
-        break
-    url = base + "catalogue/" + n["href"]
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box[:4])
+        count += 1
+        if count > 2:
+            break
+        w = x2 - x1
+        h = y2 - y1
+        resized_overlay = cv2.resize(overlay, (w, h))
+        image[y1:y2, x1:x2] = resized_overlay
+cv2.imwrite("result.jpg", image)
+print("Готово! result.jpg створено.")
